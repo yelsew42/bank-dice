@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Bank Dice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F3EBD8;
+  --panel: #FFFBF0;
+  --ink: #1D2B24;
+  --muted: #6B7268;
+  --felt: #1F5A47;
+  --felt-ink: #F6F1E3;
+  --brass: #B8862B;
+  --brass-soft: #F1DDA8;
+  --bust: #B83A2B;
+  --line: #DDD2B8;
+  --die: #FFFDF5;
+  --pip: #1D2B24;
+  --display: "Bowlby One", "Arial Black", Impact, sans-serif;
+  --body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12241D; --panel: #1A3329; --ink: #F6F1E3; --muted: #9FB3A8;
+    --felt: #0E1D17; --felt-ink: #F6F1E3; --brass: #E3B556; --brass-soft: #4A3C17;
+    --bust: #E5654F; --line: #2B4A3C; --die: #FFFDF5; --pip: #1D2B24;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12241D; --panel: #1A3329; --ink: #F6F1E3; --muted: #9FB3A8;
+  --felt: #0E1D17; --felt-ink: #F6F1E3; --brass: #E3B556; --brass-soft: #4A3C17;
+  --bust: #E5654F; --line: #2B4A3C; --die: #FFFDF5; --pip: #1D2B24;
+}
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+*, *::before, *::after { box-sizing: inherit; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); -webkit-tap-highlight-color: transparent; }
+body { min-height: 100%; }
+#app { max-width: 480px; margin: 0 auto; padding: 14px 16px 40px; }
+button { font-family: inherit; cursor: pointer; border: 0; color: inherit; }
+button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--brass); outline-offset: 2px; }
+button:disabled { cursor: not-allowed; }
+
+h1.title { font-family: var(--display); font-size: 64px; line-height: .95; margin: 28px 0 6px; letter-spacing: -1px; }
+.sub { color: var(--muted); margin: 0 0 22px; font-size: 16px; line-height: 1.4; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 14px; }
+.card h2 { font-size: 15px; margin: 0 0 10px; font-weight: 700; }
+.row-input { display: flex; gap: 8px; margin-bottom: 8px; }
+.row-input input { flex: 1; min-width: 0; font: inherit; font-size: 17px; padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); }
+.icon-btn { width: 46px; border-radius: 12px; background: transparent; border: 1.5px solid var(--line); font-size: 20px; color: var(--muted); }
+.ghost { background: transparent; border: 1.5px dashed var(--line); color: var(--ink); width: 100%; padding: 12px; border-radius: 12px; font-size: 16px; font-weight: 500; }
+.seg { display: flex; gap: 8px; }
+.seg button { flex: 1; padding: 12px 0; border-radius: 12px; font-size: 17px; font-weight: 700; background: var(--bg); border: 1.5px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--felt); color: var(--felt-ink); border-color: var(--felt); }
+.primary { width: 100%; padding: 18px; border-radius: 16px; background: var(--felt); color: var(--felt-ink); font-size: 20px; font-weight: 700; }
+.primary:active { transform: scale(.98); }
+details.rules { margin: 6px 2px 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+details.rules summary { cursor: pointer; font-weight: 700; color: var(--ink); padding: 8px 0; }
+details.rules ul { margin: 4px 0 0; padding-left: 20px; }
+
+.topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.topbar .where { font-weight: 700; font-size: 16px; }
+.topbar .rollno { color: var(--muted); font-size: 15px; }
+.link { background: none; color: var(--muted); font-size: 15px; padding: 8px 0 8px 12px; text-decoration: underline; }
+
+.table { background: var(--felt); color: var(--felt-ink); border-radius: 22px; padding: 18px 16px 20px; text-align: center; position: relative; }
+.pot-label { font-size: 15px; opacity: .8; margin: 0; }
+.pot { font-family: var(--display); font-size: 76px; line-height: 1; margin: 2px 0 6px; font-variant-numeric: tabular-nums; }
+.pot.bump { animation: bump .35s ease-out; }
+@keyframes bump { 0% { transform: scale(1); } 40% { transform: scale(1.14); } 100% { transform: scale(1); } }
+.zone { display: inline-block; font-size: 14px; font-weight: 700; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.14); }
+.zone.danger { background: var(--bust); color: #fff; }
+.dice { display: flex; justify-content: center; gap: 16px; margin: 18px 0 12px; }
+.die { width: 84px; height: 84px; background: var(--die); border-radius: 18px; display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 12px; box-shadow: 0 4px 0 rgba(0,0,0,.28); }
+.die i { width: 16px; height: 16px; border-radius: 50%; background: var(--pip); place-self: center; }
+.die.tumble { animation: tumble .14s linear infinite; }
+@keyframes tumble { 0% { transform: rotate(-8deg) translateY(0); } 50% { transform: rotate(7deg) translateY(-6px); } 100% { transform: rotate(-8deg) translateY(0); } }
+.msg { min-height: 26px; font-size: 18px; font-weight: 700; margin: 4px 0 14px; }
+.msg.good { color: var(--brass-soft); }
+.msg.bad { color: #FFB4A6; }
+.roll { width: 100%; padding: 20px; border-radius: 16px; background: var(--brass); color: #1D1A10; font-size: 22px; font-weight: 700; box-shadow: 0 4px 0 rgba(0,0,0,.3); }
+.roll:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+.roll:disabled { opacity: .55; }
+
+.players { margin-top: 16px; display: grid; gap: 10px; }
+.player { display: flex; align-items: center; gap: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 10px 10px 10px 16px; }
+.player.out { opacity: .55; }
+.player .who { flex: 1; min-width: 0; }
+.player .name { font-weight: 700; font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.player .score { color: var(--muted); font-size: 15px; font-variant-numeric: tabular-nums; }
+.bank { min-width: 112px; padding: 14px 10px; border-radius: 12px; background: var(--felt); color: var(--felt-ink); font-weight: 700; font-size: 17px; }
+.bank:disabled { background: var(--line); color: var(--muted); }
+.bank:active:not(:disabled) { transform: scale(.96); }
+.tag { min-width: 112px; text-align: center; font-weight: 700; font-size: 15px; color: var(--muted); }
+
+.overlay { position: fixed; inset: 0; background: rgba(10,20,16,.72); display: flex; align-items: flex-end; justify-content: center; padding: 16px; z-index: 10; }
+.sheet { width: 100%; max-width: 480px; background: var(--panel); border-radius: 22px; padding: 22px 18px 20px; margin-bottom: env(safe-area-inset-bottom, 0px); }
+.sheet h2 { font-family: var(--display); font-size: 34px; margin: 0 0 6px; line-height: 1.05; }
+.sheet p { color: var(--muted); margin: 0 0 14px; font-size: 16px; line-height: 1.4; }
+.sheet.bust h2 { color: var(--bust); }
+.rank { display: grid; gap: 8px; margin: 14px 0 18px; }
+.rank div { display: flex; justify-content: space-between; align-items: baseline; padding: 12px 14px; border-radius: 12px; background: var(--bg); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rank div:first-child { background: var(--brass); color: #1D1A10; }
+.rank small { font-weight: 500; opacity: .8; font-size: 14px; }
+.stack { display: grid; gap: 10px; }
+.secondary { width: 100%; padding: 16px; border-radius: 16px; background: transparent; border: 1.5px solid var(--line); font-size: 17px; font-weight: 700; }
+
+.last { margin: 16px 0 6px; }
+.last span { display: block; font-size: 14px; opacity: .8; }
+.last b { font-family: var(--display); font-size: 44px; line-height: 1.1; font-weight: 400; }
+.hint { font-size: 14px; opacity: .88; margin: 12px 0 10px; line-height: 1.35; }
+.entry { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.k { padding: 16px 0; border-radius: 12px; background: var(--die); color: #1D2B24; font-size: 22px; font-weight: 700; box-shadow: 0 3px 0 rgba(0,0,0,.3); }
+.k small { display: block; font-size: 12px; font-weight: 700; color: #7A5A12; }
+.k:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,.3); }
+.k:disabled { opacity: .5; }
+.k.seven { background: var(--brass); color: #1D1A10; }
+.k.seven small { color: #1D1A10; }
+.k.dbl { grid-column: 1 / -1; background: var(--brass); color: #1D1A10; font-size: 19px; }
+.k.bust { grid-column: 1 / -1; background: var(--bust); color: #fff; font-size: 19px; }
+.undo { margin-top: 12px; background: transparent; color: var(--felt-ink); opacity: .9; text-decoration: underline; font-size: 15px; padding: 8px 12px; }
+.undo:disabled { opacity: .35; }
+@media (max-width: 360px) {
+  .pot { font-size: 64px; }
+  .die { width: 72px; height: 72px; padding: 10px; }
+  .die i { width: 13px; height: 13px; }
+  .bank, .tag { min-width: 96px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .die.tumble, .pot.bump { animation: none; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function () {
+  var KEY = "bank-dice-v1";
+  var PIPS = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+
+  var S = defaultState();
+  var rolling = false;
+  var bumpPot = false;
+  var setupNames = ["", ""];
+  var setupRounds = 10;
+  var confirmQuit = false;
+  var setupMode = "sim";
+
+  function defaultState() {
+    return { phase: "setup", players: [], rounds: 10, round: 1, rollNum: 0, pot: 0, dice: [0, 0], msg: "", msgKind: "", end: null, mode: "sim", hist: [], last: "" };
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      if (raw) {
+        var d = JSON.parse(raw);
+        if (d && d.state && d.state.phase) {
+          S = d.state;
+          if (d.setupNames) setupNames = d.setupNames;
+          if (d.setupRounds) setupRounds = d.setupRounds;
+          if (d.setupMode) setupMode = d.setupMode;
+        }
+      }
+    } catch (e) {}
+  }
+  function save() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ state: S, setupNames: setupNames, setupRounds: setupRounds, setupMode: setupMode }));
+    } catch (e) {}
+  }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function dieHTML(n, cls) {
+    var on = PIPS[n] || [];
+    var cells = "";
+    for (var i = 0; i < 9; i++) cells += on.indexOf(i) > -1 ? "<i></i>" : "<span></span>";
+    return '<div class="die ' + (cls || "") + '" role="img" aria-label="' + (n ? "Die showing " + n : "Die") + '">' + cells + "</div>";
+  }
+
+  /* ---------- setup ---------- */
+  function renderSetup() {
+    var rows = setupNames.map(function (n, i) {
+      return '<div class="row-input">' +
+        '<input data-i="' + i + '" class="nameIn" type="text" maxlength="14" placeholder="Player ' + (i + 1) + '" value="' + esc(n) + '" autocomplete="off" aria-label="Player ' + (i + 1) + ' name">' +
+        (setupNames.length > 2 ? '<button class="icon-btn" data-remove="' + i + '" aria-label="Remove player ' + (i + 1) + '">&times;</button>' : "") +
+        "</div>";
+    }).join("");
+    var segs = [10, 15, 20].map(function (r) {
+      return '<button data-rounds="' + r + '" aria-pressed="' + (setupRounds === r) + '">' + r + "</button>";
+    }).join("");
+    return '<h1 class="title">Bank!</h1>' +
+      '<p class="sub">Roll the dice, build the pot, and bank your points before a 7 wipes them out.</p>' +
+      '<div class="card"><h2>Players</h2>' + rows +
+      (setupNames.length < 8 ? '<button class="ghost" id="addPlayer">Add player</button>' : "") + "</div>" +
+      '<div class="card"><h2>Dice</h2><div class="seg">' +
+      '<button data-mode="sim" aria-pressed="' + (setupMode === "sim") + '">App dice</button>' +
+      '<button data-mode="real" aria-pressed="' + (setupMode === "real") + '">Real dice</button></div>' +
+      '<p class="sub" style="margin:10px 0 0;font-size:14px">' +
+      (setupMode === "real" ? "Roll your own dice, then tap the total in the app." : "The app rolls the dice for you.") + "</p></div>" +
+      '<div class="card"><h2>Rounds</h2><div class="seg">' + segs + "</div></div>" +
+      '<button class="primary" id="start">Start game</button>' +
+      '<details class="rules"><summary>How to play</summary><ul>' +
+      "<li>Each round starts with an empty pot. Everyone is in.</li>" +
+      "<li>Rolls 1 to 3: add the total to the pot. A 7 is worth 70.</li>" +
+      "<li>Roll 4 and later: a 7 wipes the pot and ends the round. Doubles double the pot. Anything else adds to the pot.</li>" +
+      "<li>Tap Bank at any time to take the pot's points and sit out the rest of the round.</li>" +
+      "<li>Most points after the last round wins.</li></ul></details>";
+  }
+
+  /* ---------- play ---------- */
+  function renderPlay() {
+    var real = S.mode === "real";
+    var next = S.rollNum + 1;
+    var early = next <= 3;
+    var zone = early
+      ? '<span class="zone">Safe rolls &middot; a 7 scores 70 (roll ' + Math.min(next, 3) + " of 3)</span>"
+      : '<span class="zone danger">Danger zone &middot; a 7 wipes the pot</span>';
+    var allOut = S.players.every(function (p) { return p.banked; });
+    var rows = S.players.map(function (p, i) {
+      var action = p.banked
+        ? '<div class="tag">Banked ' + p.bankedAmt + "</div>"
+        : '<button class="bank" data-bank="' + i + '"' + (S.pot === 0 || rolling || S.end ? " disabled" : "") + ">Bank " + (S.pot > 0 ? S.pot : "") + "</button>";
+      return '<div class="player ' + (p.banked ? "out" : "") + '"><div class="who"><div class="name">' + esc(p.name) +
+        '</div><div class="score">' + p.score + " points</div></div>" + action + "</div>";
+    }).join("");
+
+    return '<div class="topbar"><div><div class="where">Round ' + S.round + " of " + S.rounds + '</div><div class="rollno">' +
+      (S.rollNum === 0 ? "No rolls yet" : "Roll " + S.rollNum + " done") + '</div></div>' +
+      '<button class="link" id="quit">' + (confirmQuit ? "Tap again to quit" : "Quit game") + "</button></div>" +
+      '<div class="table">' +
+        '<p class="pot-label">Pot</p>' +
+        '<div class="pot ' + (bumpPot ? "bump" : "") + '" id="pot" aria-live="polite">' + S.pot + "</div>" +
+        zone +
+        (real
+          ? '<div class="last"><span>Last roll</span><b>' + esc(S.last || "-") + "</b></div>"
+          : '<div class="dice" id="dice">' + dieHTML(S.dice[0]) + dieHTML(S.dice[1]) + "</div>") +
+        '<div class="msg ' + S.msgKind + '" aria-live="polite">' + esc(S.msg) + "</div>" +
+        (real
+          ? entryHTML(allOut)
+          : '<button class="roll" id="roll"' + (rolling || S.end || allOut ? " disabled" : "") + ">Roll the dice</button>") +
+      "</div>" +
+      '<div class="players">' + rows + "</div>" +
+      renderOverlay();
+  }
+
+  function renderOverlay() {
+    if (!S.end) return "";
+    var last = S.round >= S.rounds;
+    var e = S.end;
+    var sorted = S.players.slice().sort(function (a, b) { return b.score - a.score; });
+    var body = "";
+    if (e.type === "bust") {
+      body = '<div class="sheet bust"><h2>Bust! Seven out.</h2><p>The pot of ' + e.pot + " points is gone." +
+        (e.bankedCount ? " Players who banked keep their points." : " Nobody banked in time.") + "</p>";
+    } else {
+      body = '<div class="sheet"><h2>Everyone banked</h2><p>Round ' + S.round + " is over.</p>";
+    }
+    var leaders = sorted.slice(0, 3).map(function (p) {
+      return "<div><span>" + esc(p.name) + "</span><span>" + p.score + "</span></div>";
+    }).join("");
+    body += '<div class="rank">' + leaders + "</div>" +
+      '<div class="stack"><button class="primary" id="nextRound">' + (last ? "See final results" : "Start round " + (S.round + 1)) + "</button>" +
+      (S.mode === "real" && S.hist && S.hist.length ? '<button class="secondary" id="undo2">Undo last entry</button>' : "") + "</div></div>";
+    return '<div class="overlay">' + body + "</div>";
+  }
+
+  /* ---------- final ---------- */
+  function renderFinal() {
+    var sorted = S.players.slice().sort(function (a, b) { return b.score - a.score; });
+    var top = sorted[0].score;
+    var winners = sorted.filter(function (p) { return p.score === top; });
+    var title = winners.length > 1 ? "It's a tie" : esc(winners[0].name) + " wins";
+    var sub = winners.length > 1 ? winners.map(function (w) { return esc(w.name); }).join(" and ") + " finished with " + top + " points." : "Final score: " + top + " points.";
+    var rows = sorted.map(function (p, i) {
+      return "<div><span>" + (i + 1) + ". " + esc(p.name) + "</span><span>" + p.score + "</span></div>";
+    }).join("");
+    return '<h1 class="title" style="font-size:48px">' + title + '</h1><p class="sub">' + sub + "</p>" +
+      '<div class="rank">' + rows + "</div>" +
+      '<div class="stack"><button class="primary" id="again">Play again, same players</button>' +
+      '<button class="secondary" id="newGame">New game</button></div>';
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    var app = document.getElementById("app");
+    var active = document.activeElement;
+    var focusI = active && active.classList && active.classList.contains("nameIn") ? active.getAttribute("data-i") : null;
+    var selStart = focusI !== null ? active.selectionStart : null;
+
+    if (S.phase === "setup") app.innerHTML = renderSetup();
+    else if (S.phase === "play") app.innerHTML = renderPlay();
+    else app.innerHTML = renderFinal();
+    bumpPot = false;
+    save();
+
+    if (focusI !== null) {
+      var el = app.querySelector('.nameIn[data-i="' + focusI + '"]');
+      if (el) { el.focus(); try { el.setSelectionRange(selStart, selStart); } catch (e) {} }
+    }
+  }
+
+  /* ---------- game logic ---------- */
+  function startGame() {
+    var players = setupNames.map(function (n, i) {
+      return { name: (n || "").trim() || "Player " + (i + 1), score: 0, banked: false, bankedAmt: 0 };
+    });
+    S = { phase: "play", players: players, rounds: setupRounds, round: 1, rollNum: 0, pot: 0, dice: [0, 0], msg: setupMode === "real" ? "Tap the total after each roll." : "Roll to start the pot.", msgKind: "", end: null, mode: setupMode, hist: [], last: "" };
+    confirmQuit = false;
+    render();
+  }
+
+  function newRound() {
+    S.players.forEach(function (p) { p.banked = false; p.bankedAmt = 0; });
+    S.hist = []; S.last = ""; S.round += 1; S.rollNum = 0; S.pot = 0; S.dice = [0, 0]; S.msg = "Roll to start the pot."; S.msgKind = ""; S.end = null;
+    render();
+  }
+
+  function rand() { return Math.floor(Math.random() * 6) + 1; }
+
+  function doRoll() {
+    if (rolling || S.end) return;
+    rolling = true;
+    var diceEl = document.getElementById("dice");
+    var rollBtn = document.getElementById("roll");
+    if (rollBtn) rollBtn.disabled = true;
+    document.querySelectorAll(".bank").forEach(function (b) { b.disabled = true; });
+    S.msg = ""; S.msgKind = "";
+    var msgEl = document.querySelector(".msg");
+    if (msgEl) { msgEl.textContent = ""; msgEl.className = "msg"; }
+
+    var ticks = 0;
+    var timer = setInterval(function () {
+      ticks++;
+      if (diceEl) diceEl.innerHTML = dieHTML(rand(), "tumble") + dieHTML(rand(), "tumble");
+      if (ticks >= 7) {
+        clearInterval(timer);
+        finishRoll(rand(), rand());
+      }
+    }, 80);
+  }
+
+  function entryHTML(allOut) {
+    var dis = (S.end || allOut) ? " disabled" : "";
+    var early = S.rollNum + 1 <= 3;
+    var html = "";
+    if (early) {
+      html += '<p class="hint">Rolls 1 to 3: tap the total of both dice.</p><div class="entry">';
+      for (var n = 2; n <= 12; n++) {
+        html += '<button class="k' + (n === 7 ? " seven" : "") + '" data-num="' + n + '"' + dis + ">" + n + (n === 7 ? "<small>+70</small>" : "") + "</button>";
+      }
+      html += "</div>";
+    } else {
+      html += '<p class="hint">Tap the total. Any matching pair (1-1 up to 6-6) is Doubles.</p><div class="entry">';
+      [3, 4, 5, 6, 8, 9, 10, 11].forEach(function (n) {
+        html += '<button class="k" data-num="' + n + '"' + dis + ">" + n + "</button>";
+      });
+      html += '<button class="k dbl" data-double="1"' + dis + ">Doubles: pot x2</button>" +
+              '<button class="k bust" data-seven="1"' + dis + ">7: Bust</button></div>";
+    }
+    html += '<button class="undo" id="undo"' + (S.hist && S.hist.length ? "" : " disabled") + ">Undo last entry</button>";
+    return html;
+  }
+
+  function push() {
+    S.hist = S.hist || [];
+    S.hist.push(JSON.stringify({ players: S.players, rollNum: S.rollNum, pot: S.pot, dice: S.dice, msg: S.msg, msgKind: S.msgKind, end: S.end, last: S.last }));
+    if (S.hist.length > 40) S.hist.shift();
+  }
+
+  function undo() {
+    if (!S.hist || !S.hist.length) return;
+    var snap = JSON.parse(S.hist.pop());
+    S.players = snap.players; S.rollNum = snap.rollNum; S.pot = snap.pot; S.dice = snap.dice;
+    S.msg = snap.msg; S.msgKind = snap.msgKind; S.end = snap.end; S.last = snap.last;
+    render();
+  }
+
+  function enter(kind, val) {
+    if (S.end || rolling) return;
+    var early = S.rollNum + 1 <= 3;
+    if (early && kind !== "num") return;
+    push();
+    if (kind === "double") { S.last = "Doubles"; resolve(0, true); }
+    else if (kind === "seven") { S.last = "7"; resolve(7, false); }
+    else { S.last = String(val); resolve(val, false); }
+  }
+
+  function finishRoll(a, b) {
+    S.dice = [a, b];
+    rolling = false;
+    resolve(a + b, a === b);
+  }
+
+  function resolve(sum, isDouble) {
+    S.rollNum += 1;
+    var early = S.rollNum <= 3;
+
+    if (early) {
+      if (sum === 7) { S.pot += 70; S.msg = "Lucky 7! +70"; S.msgKind = "good"; }
+      else { S.pot += sum; S.msg = "+" + sum + (isDouble ? " (doubles count face value early)" : ""); S.msgKind = ""; }
+      bumpPot = true;
+    } else {
+      if (sum === 7) {
+        var lost = S.pot;
+        var bankedCount = S.players.filter(function (p) { return p.banked; }).length;
+        S.pot = 0;
+        S.msg = "Seven! Pot lost.";
+        S.msgKind = "bad";
+        S.end = { type: "bust", pot: lost, bankedCount: bankedCount };
+      } else if (isDouble) {
+        S.pot *= 2; S.msg = "Doubles! Pot doubled."; S.msgKind = "good"; bumpPot = true;
+      } else {
+        S.pot += sum; S.msg = "+" + sum; S.msgKind = ""; bumpPot = true;
+      }
+    }
+    render();
+  }
+
+  function bank(i) {
+    var p = S.players[i];
+    if (!p || p.banked || S.pot === 0 || rolling || S.end) return;
+    if (S.mode === "real") push();
+    p.score += S.pot;
+    p.banked = true;
+    p.bankedAmt = S.pot;
+    S.msg = p.name + " banked " + S.pot + ".";
+    S.msgKind = "good";
+    if (S.players.every(function (x) { return x.banked; })) {
+      S.end = { type: "allbanked", pot: S.pot, bankedCount: S.players.length };
+    }
+    render();
+  }
+
+  function nextRound() {
+    if (S.round >= S.rounds) { S.phase = "final"; S.end = null; render(); }
+    else newRound();
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener("click", function (ev) {
+    var t = ev.target.closest("button");
+    if (!t) return;
+
+    if (t.id === "addPlayer") { setupNames.push(""); render(); return; }
+    if (t.hasAttribute("data-remove")) { setupNames.splice(parseInt(t.getAttribute("data-remove"), 10), 1); render(); return; }
+    if (t.hasAttribute("data-rounds")) { setupRounds = parseInt(t.getAttribute("data-rounds"), 10); render(); return; }
+    if (t.id === "start") { startGame(); return; }
+    if (t.hasAttribute("data-mode")) { setupMode = t.getAttribute("data-mode"); render(); return; }
+    if (t.id === "roll") { doRoll(); return; }
+    if (t.hasAttribute("data-num")) { enter("num", parseInt(t.getAttribute("data-num"), 10)); return; }
+    if (t.hasAttribute("data-double")) { enter("double"); return; }
+    if (t.hasAttribute("data-seven")) { enter("seven"); return; }
+    if (t.id === "undo" || t.id === "undo2") { undo(); return; }
+    if (t.hasAttribute("data-bank")) { bank(parseInt(t.getAttribute("data-bank"), 10)); return; }
+    if (t.id === "nextRound") { nextRound(); return; }
+    if (t.id === "quit") {
+      if (confirmQuit) { confirmQuit = false; S = defaultState(); render(); }
+      else { confirmQuit = true; render(); setTimeout(function () { confirmQuit = false; if (S.phase === "play" && !S.end && !rolling) render(); }, 3000); }
+      return;
+    }
+    if (t.id === "again") {
+      S.players.forEach(function (p) { p.score = 0; p.banked = false; p.bankedAmt = 0; });
+      S.hist = []; S.last = ""; S.phase = "play"; S.round = 1; S.rollNum = 0; S.pot = 0; S.dice = [0, 0]; S.msg = "Roll to start the pot."; S.msgKind = ""; S.end = null;
+      render(); return;
+    }
+    if (t.id === "newGame") { S = defaultState(); render(); return; }
+  });
+
+  document.addEventListener("input", function (ev) {
+    var t = ev.target;
+    if (t.classList && t.classList.contains("nameIn")) {
+      setupNames[parseInt(t.getAttribute("data-i"), 10)] = t.value;
+      save();
+    }
+  });
+
+  load();
+  if (S.phase === "play" && S.end === null && S.players.length === 0) S = defaultState();
+  render();
+})();
+</script>
+</body>
+</html>
